@@ -139,7 +139,8 @@ const transferController = require('./../controllers/transferController');
  *                  default: success
  *                accessToken:
  *                  type: string
- *                  description: The token of the user, which is used to access the API. It will be expired in 15 minutes
+ *                refreshToken:
+ *                  type: string
  *                data:
  *                  $ref: '#/components/schemas/User'
  *      400:
@@ -206,6 +207,36 @@ const transferController = require('./../controllers/transferController');
  *       500:
  *         $ref: '#/components/responses/ValidationError'
  *      
+ */
+
+// token
+
+/**
+ * @swagger
+ * /api/users/token:
+ *   get:
+ *     summary: Get a new access token when the old access token is expired
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: The new access token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 accessToken:
+ *                   type: string
+ *       401:
+ *         $ref: '#/components/responses/UnauthorizedError'
+ *       404:
+ *         $ref: '#/components/responses/NotFoundError'
+ *                  
  */
 
 //me
@@ -834,6 +865,7 @@ const transferController = require('./../controllers/transferController');
 
 userRouter.route('/login').post(authController.login);
 userRouter.route('/register').post(authController.register);
+userRouter.route('/token').get(authController.refreshToken);
 
 // Protect all routes after this middleware
 userRouter.use(authController.protect);

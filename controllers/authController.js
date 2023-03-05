@@ -11,6 +11,12 @@ const createAccessToken = id => {
     });
 };
 
+const createRefreshToken = id => {
+    return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, {
+        expiresIn: process.env.JWT_REFRESH_EXPIRES_IN
+    });
+};
+
 login = async (req, res, next) => {
     try {
         const username = req.body.username;
@@ -29,6 +35,7 @@ login = async (req, res, next) => {
 
         // 3) If everything ok, send token pair to client
         const accessToken = createAccessToken(user._id);
+        const refreshToken = createRefreshToken(user._id);
 
         // Remove password from output
         user.password = undefined;
@@ -37,6 +44,7 @@ login = async (req, res, next) => {
         res.status(201).json({
             status: 'success',
             accessToken: accessToken,
+            refreshToken: refreshToken,
             data: newUser
         });
     } catch (err) {
@@ -151,6 +159,39 @@ resetPassword = async (req, res, next) => {
     }
 };
 
+refreshToken = async (req, res, next) => {
+    try {
+        // 1) Getting token and check of it's there
+        let refreshToken;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+            refreshToken = req.headers.authorization.split(' ')[1];
+        }
+
+        if (!refreshToken) {
+            return next(new AppError(401, 'fail', 'You are not logged in! Please log in to get access.'), req, res, next);
+        }
+
+        // 2) Verification token
+        const decoded = await promisify(jwt.verify)(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+        // 3) Check if user still exists
+        const currentUser = await User.findById(decoded.id);
+        if (!currentUser) {
+            return next(new AppError(401, 'fail', 'The user belonging to this token does no longer exist.'), req, res, next);
+        }
+
+        // GRANT ACCESS TO PROTECTED ROUTE
+        const accessToken = createAccessToken(currentUser._id);
+        res.status(200).json({
+            status: 'success',
+            accessToken: accessToken
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+
 protect = async (req, res, next) => {
     try {
         // 1) Getting token and check of it's there
@@ -194,6 +235,7 @@ module.exports = {
     register,
     changePassword,
     resetPassword,
+    refreshToken,
     protect,
     restrictTo
 };

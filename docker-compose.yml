@@ -5,6 +5,26 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - 3443:443
+      - 3443:3443
     volumes:
       - .:/usr/src/app
+    depends_on:
+      - mongo
+    environment:
+      MONGO_URI: mongodb://root:123456@mongo:27017/simple?authSource=admin
+      JWT_ACCESS_SECRET: 6fe503354219e1fc93f59ad78f2415b92fb780459da6a2ef936e7973343b6a6b
+      JWT_ACESSS_EXPIRES_IN: 15m
+      JWT_REFRESH_SECRET: c99cecaf8dff333a434c534f18bcb43199ef30ed489fa0c39d0f57e6594538fc
+      JWT_REFRESH_EXPIRES_IN: 30d
+  mongo:
+    image: mongo:5.0.15
+    restart: unless-stopped
+    ports:
+      - 27017:27017
+    volumes:
+      - ./mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ./db:/data/db 
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+      MONGO_INITDB_DATABASE: simple
