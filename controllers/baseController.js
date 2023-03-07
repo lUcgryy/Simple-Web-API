@@ -13,7 +13,7 @@ deleteOne = Model => async (req, res, next) => {
             data: null
         });
     } catch (err) {
-        next(err);
+        return next(new AppError(404, 'fail', 'No document found with that ID'));
     }
 };
 
@@ -50,7 +50,7 @@ updateOne = Model => async (req, res, next) => {
             data
         });
     } catch (err) {
-        next(err);
+        return next(new AppError(404, 'fail', 'No document found with that ID'));
     }
 };
 
@@ -85,7 +85,8 @@ getOne = (Model, popOptions) => async (req, res, next) => {
             data
         });
     } catch (err) {
-        next(err);
+        //display 404
+        return next(new AppError(404, 'fail', 'No document found with that ID'));
     }
 };
 
