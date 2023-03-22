@@ -6,6 +6,8 @@ const base = require("./baseController");
 const AppError = require('../utils/appError');
 const upload = require('../utils/upload');
 const validator = require("validator");
+const address = require('../utils/osInfo');
+require('dotenv').config();
 
 
 function addMonth(date, month) {
@@ -29,7 +31,7 @@ function isVipExpired(User) {
 getCurrentUser = async (req, res, next) => {
     try {
         let query = User.findById(req.user.id);
-        query = query.populate('hasBought');
+        query = query.populate('hasBought').select('+resetToken');
         if (req.user.vip) query = query.populate('vip');
         const data = await query;
 
@@ -84,8 +86,12 @@ uploadAvatar = async (req, res, next) => {
         if (req.file == undefined) {
             return next(new AppError(400, 'fail', 'Please upload a file!'));
         }
+        const serverAddress = address;
+        const port = process.env.PORT || 3443;
+        const filePath = req.file.path.replace('public', '').replace(/\\/g, '/');
+        const serverUrl = `http://${serverAddress}:${port}${filePath}`;
         const user = await User.findByIdAndUpdate(req.user.id, {
-            avatar: req.file.path
+            avatar: filePath
         }, {
             new: true,
             runValidators: true
@@ -95,10 +101,13 @@ uploadAvatar = async (req, res, next) => {
             return next(new AppError(404, 'fail', 'No document found with that ID'));
         }
 
+
+
         res.status(200).json({
             status: 'success',
             data: user,
-            file: req.file
+            file: req.file,
+            serverUrl: serverUrl
         });
     } catch (err) {
         next(err);
@@ -169,7 +178,7 @@ buyItem = async (req, res, next) => {
             } else {
                 const quantity = items[i].quantity;
                 if (!validator.isInt(quantity.toString()) || item.amount < quantity || quantity < 1) {
-                    continue;
+                    return next(new AppError(400, 'fail', 'Not enough item in stock'));
                 } else {
                     item.amount -= quantity;
                     total_price += item.price * quantity;
@@ -201,7 +210,7 @@ buyItem = async (req, res, next) => {
 addMoney = async (req, res, next) => {
     try {
         creditCard = req.body.creditCard;
-        money = req.body.money;
+        money = Number(req.body.money);
         // Check credit card and money exists
         if (!creditCard || !money) {
             return next(new AppError(400, 'fail', 'Missing credit card or money'));
@@ -233,7 +242,7 @@ sendMoney = async (req, res, next) => {
     try {
         const sender = await User.findById(req.user.id);
         const receiver = await User.findById(req.body.id);
-        const money = req.body.money;
+        const money = Number(req.body.money);
         // Check sender and receiver exists
         if (!sender || !receiver) {
             return next(new AppError(404, 'fail', 'No document found with that ID'));

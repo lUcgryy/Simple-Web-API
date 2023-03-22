@@ -21,6 +21,7 @@ const buySchema = new mongoose.Schema({
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
+        default: "",
         trim: true,
         maxlength: [40, "A user name must have less or equal than 40 characters"],
     },
@@ -33,7 +34,7 @@ const userSchema = new mongoose.Schema({
     },
     avatar: {
         type: String,
-        default: "/assets/default.jpg",
+        default: "/images/default.png",
     },
     role: {
         type: String,
@@ -43,9 +44,11 @@ const userSchema = new mongoose.Schema({
     phone: {
         type: String,
         trim: true,
-        default: "00000000000",
+        default: "",
         maxlength: [11, "A user phone number must have less or equal than 11 characters"],
-        validate: [validator.isMobilePhone, "Please provide a valid phone number"],
+        validate: (value) => {return validator.isMobilePhone(value) || validator.isEmpty(value)},
+        message: "Please provide a valid phone number"
+
     },
     username: {
         type: String,
@@ -82,7 +85,7 @@ const userSchema = new mongoose.Schema({
 // Encrypt password using bcrypt
 userSchema.pre("save", async function (next) {
     // Create reset token
-    this.resetToken = crypto.randomBytes(32).toString("hex");
+    this.resetToken = crypto.randomBytes(8).toString("hex");
     // Only run this function if password was actually modified
     if (!this.isModified("password")) return next();
 

@@ -4,7 +4,7 @@ const path = require('path');
 const bodyparser = require('body-parser');
 const rfs = require('rotating-file-stream');
 const cookieParser = require('cookie-parser');
-const https = require('https');
+const http = require('http');
 const fs = require('fs');
 const mongoose = require('mongoose');
 const helmet = require('helmet');
@@ -32,8 +32,8 @@ const swaggerOptions = {
         },
         servers: [
             {
-                url: "https://localhost:3443"
-            }
+                url: ["https://localhost:3443"]
+            },
         ]
     },
     apis: ["./routes/*.js"]
@@ -66,7 +66,7 @@ app.use(morgan('combined', { stream: accessLogStream }));
 
 // Set up static files
 app.use('/static', express.static(path.join(__dirname, 'public')));
-app.use('/assets', express.static(path.join(__dirname, 'public/assets')));
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
 // Set up security HTTP headers
 app.use(helmet());
@@ -118,7 +118,7 @@ app.use('*', (req, res, next) => {
 app.use(globalErrorHandler);
 
 // Start server
-var server = https.createServer(httpsOptions, app);
+var server = http.createServer(app);
 server.listen(port, () => {
     console.log('Server started on port ' + port);
 });
